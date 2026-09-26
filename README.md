@@ -57,10 +57,16 @@ EcoBudget/
         │   ├── kotlin/com/example/
         │   │   ├── model/                 Transaction, Category, YearMonth
         │   │   ├── data/repository/       TransactionRepository, FakeTransactionRepository
-        │   │   └── viewmodel/             EcoBudgetUiState, EcoBudgetViewModel, CategoryLabels
+        │   │   ├── viewmodel/             EcoBudgetUiState, EcoBudgetViewModel, CategoryLabels
+        │   │   └── utils/                 UUID.kt, Time.kt  (déclarations expect)
         │   └── composeResources/values/   strings.xml (catalogue de libellés partagé)
+        ├── androidMain/kotlin/com/example/utils/   UUID.kt, Time.kt  (actual : java.util.UUID, System)
+        ├── iosMain/kotlin/com/example/utils/       UUID.kt, Time.kt  (actual : NSUUID, NSDate)
         └── commonTest/kotlin/com/example/ YearMonthTest, EcoBudgetViewModelTest
 ```
+
+Cette arborescence reprend celle du cours (Chapitre 03, diapositives 27 et 63) : `commonMain` pour la
+logique pure, `androidMain` / `iosMain` pour les implémentations `actual` propres à chaque système.
 
 Les **noms de packages Kotlin ont été conservés** (`com.example.model`, `com.example.data.repository`,
 `com.example.viewmodel`) : l'interface Android continue d'importer les mêmes symboles, seul leur module
@@ -111,12 +117,11 @@ plugins {
 kotlin {
   androidTarget { compilerOptions { jvmTarget.set(JvmTarget.JVM_17) } }   // aligné sur :app
   listOf(iosX64(), iosArm64(), iosSimulatorArm64()).forEach {
-    it.binaries.framework { baseName = "Shared"; isStatic = true }       // framework consommable par Xcode
+    it.binaries.framework { baseName = "shared"; isStatic = true }       // framework consommable par Xcode
   }
   sourceSets {
-    all { languageSettings.optIn("kotlin.uuid.ExperimentalUuidApi") }
     commonMain.dependencies {
-      api(compose.runtime)
+      implementation(compose.runtime)          // moteur Compose + annotation @Immutable
       api(compose.components.resources)
       api(libs.kotlinx.coroutines.core)
       api(libs.jetbrains.lifecycle.viewmodel)
@@ -134,10 +139,15 @@ compose.resources {
 }
 ```
 
-**Choix `api` / `implementation`** : `Flow`, `ViewModel`, `StringResource` et `stringResource()`
-apparaissent dans l'API publique du module (type de retour du dépôt, super-classe du ViewModel, type de
+**Choix `api` / `implementation`** (cf. diapositives 56-57 du cours) : `Flow`, `ViewModel`,
+`StringResource` et `stringResource()` apparaissent dans l'API publique du module (type de retour du dépôt, super-classe du ViewModel, type de
 `Category.labelRes`). Ils sont donc exposés en `api` pour que `:app` compile sans redéclarer ces
-dépendances. `kotlinx-datetime` n'apparaît dans aucune signature publique et reste en `implementation`.
+dépendances. `kotlinx-datetime` et `compose.runtime` n'apparaissent dans aucune signature publique et
+restent en `implementation`.
+
+**Nettoyage des doublons côté `:app`** (diapositive 65) : la dépendance `kotlinx-coroutines-core` a été retirée
+de `app/build.gradle.kts`, puisqu'elle est désormais fournie par `:shared` (dépendance `api`). Cela évite deux
+déclarations concurrentes de la même bibliothèque.
 
 **`lifecycle-viewmodel` déclaré explicitement** : il arrive déjà de façon transitive
 (`components-resources → compose.ui → lifecycle-viewmodel`, vérifié avec `:shared:dependencies`). Il reste
@@ -180,9 +190,9 @@ introuvable. Les erreurs citées ci-dessous sont les **sorties réelles du compi
 
 | | |
 |---|---|
-| **Problème rencontré** | **Aucun.** Le fichier a compilé tel quel dans `commonMain`. |
+| **Problème rencontré** | **Aucune erreur de compilation.** Le fichier a compilé tel quel dans `commonMain`. En revanche, l'identifiant de chaque transaction était produit ailleurs par `java.util.UUID` (voir §4.5 et §4.7), interdit dans le code commun. |
 | **Analyse** | La `data class` n'utilise que des types de la bibliothèque standard Kotlin (`String`, `Double`, `Long`) et l'enum `Category`. La date est stockée en `Long` (millisecondes epoch), une représentation neutre qui ne dépend pas de `java.util.Date`. |
-| **Choix technique** | Déplacement pur (`git mv`, historique conservé). |
+| **Choix technique** | Déplacement (`git mv`, historique conservé) et, comme dans le cours (diapositive 74), valeur par défaut `val id: String = generateUUID()` : le modèle sait générer son propre identifiant via la fonction `expect` décrite en §4.5. |
 | **Justification** | Les types `kotlin.*` de base sont implémentés nativement sur chaque cible (JVM, Kotlin/Native pour iOS). Garder un `Long` plutôt qu'un type date évite en plus d'imposer une bibliothèque de dates aux consommateurs du modèle. |
 
 ---
@@ -280,7 +290,7 @@ Deux erreurs méritent une explication :
 
 | API JVM d'origine | Remplacement commun |
 |---|---|
-| `Calendar.getInstance()` (instant présent) | `Clock.System.now()` |
+| `Calendar.getInstance()` (instant présent) | `getCurrentTimeMillis()`, fonction `expect/actual` (voir §4.7) |
 | `cal.timeInMillis = ts` puis `get(YEAR/MONTH)` | `Instant.fromEpochMilliseconds(ts).toLocalDateTime(TimeZone.currentSystemDefault())` |
 | `cal.set(YEAR, MONTH, DAY, HOUR…)` + `timeInMillis` | `LocalDateTime(y, m + 1, d, h, 0).toInstant(tz).toEpochMilliseconds()`, encapsulé dans la nouvelle méthode `timestampAt(day, hour)` |
 | `SimpleDateFormat("MMMM yyyy", Locale.FRENCH)` + `titlecase(Locale)` | `"${FRENCH_MONTH_NAMES[month]} $year"` avec une liste de 12 noms déjà capitalisés |
@@ -292,7 +302,7 @@ comportement (« Août 2026 »). `containsTimestamp` s'appuie désormais sur `fr
 conversion à maintenir).
 
 **Justification** :
-- `kotlinx-datetime` est la bibliothèque de dates multiplateforme maintenue par JetBrains. Elle délègue à
+- `kotlinx-datetime` est la bibliothèque de dates multiplateforme officielle (diapositives 81-83 du cours). Elle délègue à
   `java.time` sur Android/JVM et à `Foundation` (`NSTimeZone`) sur iOS. On garde donc la gestion correcte des
   fuseaux horaires et de l'heure d'été sur les deux plateformes.
 - La **table des mois** remplace `SimpleDateFormat`, qui n'a pas d'équivalent commun. `kotlinx-datetime`
@@ -344,23 +354,41 @@ val currentMonth = YearMonth.current()
 fun getTimeForMonth(monthOffset: Int, day: Int, hour: Int): Long =
     currentMonth.plusMonths(monthOffset).timestampAt(day, hour)
 ...
-id = Uuid.random().toString()          // kotlin.uuid.Uuid
+id = generateUUID()                    // fonction expect (com.example.utils)
+```
+
+Mécanisme `expect/actual` (diapositives 34, 38 et 73-76 du cours) :
+
+```kotlin
+// shared/src/commonMain/kotlin/com/example/utils/UUID.kt   (la promesse)
+expect fun generateUUID(): String
+
+// shared/src/androidMain/kotlin/com/example/utils/UUID.kt  (JVM Android)
+import java.util.UUID
+actual fun generateUUID(): String = UUID.randomUUID().toString()
+
+// shared/src/iosMain/kotlin/com/example/utils/UUID.kt      (Foundation Apple)
+import platform.Foundation.NSUUID
+actual fun generateUUID(): String = NSUUID().UUIDString()
 ```
 
 - `java.util.Calendar` → les méthodes communes `YearMonth.plusMonths()` / `timestampAt()` créées en §4.3.
   Le passage d'année (mois -1 en janvier, +1 en décembre), géré implicitement par le mode *lenient* de
   `Calendar`, est désormais **explicite et testé** (`plusMonthsHandlesYearBoundariesInBothDirections`).
-- `java.util.UUID` → **`kotlin.uuid.Uuid`** de la bibliothèque standard (Kotlin ≥ 2.0.20), activé par
-  `languageSettings.optIn("kotlin.uuid.ExperimentalUuidApi")` dans le script Gradle.
+- `java.util.UUID` → **fonction `expect fun generateUUID(): String`**, implémentée par `java.util.UUID` sur
+  Android et par `NSUUID` sur iOS.
 
 **Justification** :
-- `kotlin.uuid.Uuid.random()` produit un UUID v4 au même format texte que `java.util.UUID`
-  (`xxxxxxxx-xxxx-4xxx-…`). Il s'appuie sur le générateur aléatoire sécurisé de chaque plateforme
-  (`SecureRandom` sur JVM, `arc4random` sur Apple). Aucune dépendance tierce n'est nécessaire.
-- L'API est marquée *expérimentale* (susceptible d'évoluer). L'opt-in est posé **une fois, au niveau du
-  module**, pour ne pas disperser des `@OptIn` dans le code. Alternatives écartées : la bibliothèque
-  `benasher44:uuid` (dépendance tierce inutile) ou un `expect fun randomId()` (deux implémentations pour un
-  besoin couvert par la stdlib).
+- `java.util.UUID` n'existe pas dans le framework de base d'iOS. `expect/actual` confie la génération à l'API
+  **native** de chaque système : `java.util.UUID` reste utilisé, mais uniquement dans `androidMain`, où le
+  SDK Java est autorisé ; iOS utilise `NSUUID` de Foundation. Les deux produisent un UUID v4 au même format
+  texte (`xxxxxxxx-xxxx-4xxx-…`).
+- Le mécanisme est résolu **statiquement à la compilation** : si une cible déclarée omet son `actual`, la
+  compilation échoue (diapositives 31 et 33). Aucun oubli n'est donc possible à l'exécution.
+- Le besoin est simple et ciblé (une fonction, une ligne par plateforme), ce qui respecte la bonne pratique
+  du cours : limiter `expect/actual` à des abstractions minimales (diapositive 36).
+- Alternative possible : `kotlin.uuid.Uuid` de la stdlib (Kotlin ≥ 2.0.20). Elle est encore marquée
+  *expérimentale* et demande un opt-in ; nous avons retenu l'approche du cours, stable et explicite.
 - Le jeu de données produit est **strictement identique** à l'original (13 transactions, mêmes montants,
   mêmes jours et heures), ce que vérifient les tests du ViewModel.
 
@@ -371,8 +399,8 @@ id = Uuid.random().toString()          // kotlin.uuid.Uuid
 | | |
 |---|---|
 | **Problème rencontré** | Aucune erreur propre : la classe n'utilise que des types du domaine et de la stdlib (`coerceIn`, `Category.entries`). Elle était cependant déclarée dans le même fichier que le ViewModel. |
-| **Choix technique** | Extraction dans un fichier dédié de `commonMain`, contenu inchangé. |
-| **Justification** | L'état d'interface est une `data class` **immuable** : pas de mutabilité partagée entre threads, donc aucune contrainte liée au modèle mémoire de Kotlin/Native. Un fichier dédié rend le contrat d'état lisible pour les équipes Android et iOS (côté Swift, l'état est observé et les propriétés calculées `budgetUsageRatio`, `isAllCategoriesSelected`… sont partagées au lieu d'être réécrites). |
+| **Choix technique** | Extraction dans un fichier dédié de `commonMain`, contenu inchangé, et ajout de l'annotation **`@Immutable`** (`androidx.compose.runtime`, fournie par `compose.runtime` en `commonMain`), comme recommandé en diapositive 70. |
+| **Justification** | L'état d'interface est une `data class` **immuable** : pas de mutabilité partagée entre threads, donc aucune contrainte liée au modèle mémoire de Kotlin/Native. Un fichier dédié rend le contrat d'état lisible pour les équipes Android et iOS (côté Swift, l'état est observé et les propriétés calculées `budgetUsageRatio`, `isAllCategoriesSelected`… sont partagées au lieu d'être réécrites). `@Immutable` garantit au compilateur Compose que l'objet ne changera pas après sa création : il peut alors ignorer la recomposition des composables dont les paramètres n'ont pas changé, sur toutes les plateformes. |
 
 ---
 
@@ -409,11 +437,29 @@ réécriture.
 
 | Élément | Remplacement | Commentaire |
 |---|---|---|
-| `System.currentTimeMillis()` | `Clock.System.now().toEpochMilliseconds()` | kotlinx-datetime |
-| `Calendar` (15 du mois à 12 h) | `currentYearMonth.timestampAt(day = 15, hour = 12)` | même comportement qu'avant, sans duplication |
-| `UUID.randomUUID()` | `Uuid.random()` | stdlib, cf. §4.5 |
+| `System.currentTimeMillis()` | `getCurrentTimeMillis()` | **`expect/actual`** (diapositives 79-80), voir ci-dessous |
+| `Calendar` (15 du mois à 12 h) | `currentYearMonth.timestampAt(day = 15, hour = 12)` → `LocalDateTime(…).toInstant(TimeZone.currentSystemDefault())` | kotlinx-datetime (diapositives 81-83), même comportement qu'avant |
+| `UUID.randomUUID()` | `generateUUID()` | **`expect/actual`**, cf. §4.5 |
 | Super-classe `ViewModel` | inchangée, fournie par `org.jetbrains.androidx.lifecycle:lifecycle-viewmodel:2.8.4` | variante KMP publiée par JetBrains pour Compose Multiplatform. Sur Android, elle se résout vers l'artefact `androidx.lifecycle` officiel (métadonnées Gradle), donc aucun doublon de classe |
 | Instanciation | ajout d'une **fabrique commune** `EcoBudgetViewModel.Factory` (`viewModelFactory { initializer { … } }`) | voir ci-dessous |
+
+Horodatage courant par `expect/actual` :
+
+```kotlin
+// commonMain/kotlin/com/example/utils/Time.kt
+expect fun getCurrentTimeMillis(): Long
+
+// androidMain/kotlin/com/example/utils/Time.kt
+actual fun getCurrentTimeMillis(): Long = System.currentTimeMillis()
+
+// iosMain/kotlin/com/example/utils/Time.kt
+import platform.Foundation.NSDate
+import platform.Foundation.timeIntervalSince1970
+actual fun getCurrentTimeMillis(): Long = (NSDate().timeIntervalSince1970 * 1000).toLong()
+```
+
+`java.lang.System` reste donc confiné à `androidMain`. `YearMonth.current()` s'appuie aussi sur cette
+fonction, si bien qu'une seule source de « l'heure actuelle » alimente tout le code commun.
 
 **Gestion du cycle de vie et de la chaîne réactive** :
 
@@ -575,6 +621,7 @@ et les tests unitaires les figent.
 | 5 | Étape 5 : centralisation des libellés | `composeResources`, `Res.string`, `Category.labelRes` |
 | 6 | Étape 6 : tests de non-régression | `commonTest` (13 tests) |
 | 7 | Étape 7 : document technique de synthèse | ce README + captures d'écran |
+| 8 | Étape 8 : alignement sur le Chapitre 03 | `expect/actual` pour l'UUID et l'heure (`androidMain`/`iosMain`), `@Immutable`, framework `shared`, retrait du doublon coroutines dans `:app` |
 
 Chaque commit compile (`:app:assembleDebug`) : la migration est progressive et peut être rejouée pas à pas
 (`git log --stat`, `git show <commit>`).
@@ -600,7 +647,7 @@ Prérequis : JDK 17 ou 21, Android SDK (plateforme 35), un émulateur ou un appa
 Framework iOS (sur macOS avec Xcode uniquement) :
 
 ```bash
-./gradlew :shared:linkDebugFrameworkIosSimulatorArm64    # → shared/build/bin/iosSimulatorArm64/debugFramework/Shared.framework
+./gradlew :shared:linkDebugFrameworkIosSimulatorArm64    # → shared/build/bin/iosSimulatorArm64/debugFramework/shared.framework
 ```
 
 ---
@@ -610,7 +657,9 @@ Framework iOS (sur macOS avec Xcode uniquement) :
 - **Cibles iOS non compilées** : le travail a été réalisé sous Windows, où Kotlin/Native ne peut pas produire
   de binaires Apple. Les cibles sont déclarées et le code commun est validé par
   `compileCommonMainKotlinMetadata` (compilation sans aucune API de plateforme). La génération effective du
-  framework `Shared` reste à faire sur macOS, et aucune application iOS (projet Xcode) n'était demandée.
+  framework `shared` reste à faire sur macOS, et aucune application iOS (projet Xcode) n'était demandée.
+  Les fichiers `iosMain` (`NSUUID`, `NSDate`) reprennent le code du cours ; comme l'indique la diapositive 76,
+  ils ne peuvent pas être vérifiés sous Windows faute de SDK Apple.
 - **Interface graphique restée dans `:app`** : conformément au cahier des charges, seuls le modèle, les données,
   l'état, le ViewModel et les libellés ont été mutualisés. Les composables Jetpack Compose utilisent encore
   `java.text.NumberFormat` / `SimpleDateFormat` pour le formatage des montants et des dates, ce qui est

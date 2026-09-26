@@ -1,11 +1,11 @@
 package com.example.model
 
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+import com.example.utils.getCurrentTimeMillis
 
 /**
  * Modèle immuable représentant un mois spécifique pour la navigation budgétaire.
@@ -74,7 +74,7 @@ data class YearMonth(
          * Crée le YearMonth courant.
          */
         fun current(): YearMonth {
-            return fromTimestamp(Clock.System.now().toEpochMilliseconds())
+            return fromTimestamp(getCurrentTimeMillis())
         }
 
         /**

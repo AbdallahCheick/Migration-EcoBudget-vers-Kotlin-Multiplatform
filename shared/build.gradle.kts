@@ -34,26 +34,21 @@ kotlin {
     iosSimulatorArm64()
   ).forEach { iosTarget ->
     iosTarget.binaries.framework {
-      baseName = "Shared"
+      baseName = "shared"
       isStatic = true
     }
   }
 
   sourceSets {
-    all {
-      // kotlin.uuid.Uuid (remplaçant multiplateforme de java.util.UUID) est encore expérimental.
-      languageSettings.optIn("kotlin.uuid.ExperimentalUuidApi")
-    }
-
     commonMain.dependencies {
       // "api" : ces types apparaissent dans l'API publique du module (Flow, ViewModel,
       // StringResource/stringResource) et doivent donc être visibles depuis :app.
-      api(compose.runtime)
+      implementation(compose.runtime)   // @Immutable + moteur requis par le compilateur Compose
       api(compose.components.resources)
       api(libs.kotlinx.coroutines.core)
       api(libs.jetbrains.lifecycle.viewmodel)
 
-      // Détail d'implémentation (remplace java.util.Calendar / System.currentTimeMillis).
+      // Remplace java.util.Calendar (construction de dates, fuseau horaire).
       implementation(libs.kotlinx.datetime)
     }
 

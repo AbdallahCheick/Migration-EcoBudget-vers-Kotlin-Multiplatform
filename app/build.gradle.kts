@@ -85,8 +85,8 @@ dependencies {
   implementation(libs.androidx.lifecycle.viewmodel.compose)
 
   // Coroutines
+  // kotlinx-coroutines-core est désormais fourni par le module :shared (dépendance api)
   implementation(libs.kotlinx.coroutines.android)
-  implementation(libs.kotlinx.coroutines.core)
 
   // Base locale (à retirer si vous n'utilisez pas Room)
   implementation(libs.androidx.room.ktx)

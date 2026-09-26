@@ -9,14 +9,14 @@ import com.example.data.repository.TransactionRepository
 import com.example.model.Category
 import com.example.model.Transaction
 import com.example.model.YearMonth
+import com.example.utils.generateUUID
+import com.example.utils.getCurrentTimeMillis
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
-import kotlin.uuid.Uuid
 
 /**
  * ViewModel responsable de la couche logique, de la navigation mensuelle et de l'état réactif d'EcoBudget.
@@ -185,13 +185,13 @@ class EcoBudgetViewModel(
                 // Création d'une nouvelle transaction dans le mois affiché
                 val currentYearMonth = _currentMonth.value
                 val dateToUse = if (currentYearMonth == YearMonth.current()) {
-                    Clock.System.now().toEpochMilliseconds()
+                    getCurrentTimeMillis()
                 } else {
                     currentYearMonth.timestampAt(day = 15, hour = 12)
                 }
 
                 val newTransaction = Transaction(
-                    id = Uuid.random().toString(),
+                    id = generateUUID(),
                     title = title.trim(),
                     amount = amount,
                     date = dateToUse,

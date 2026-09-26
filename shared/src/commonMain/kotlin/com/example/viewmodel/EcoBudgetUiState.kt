@@ -3,6 +3,7 @@ package com.example.viewmodel
 import com.example.model.Category
 import com.example.model.Transaction
 import com.example.model.YearMonth
+import androidx.compose.runtime.Immutable
 
 /**
  * Classe de données immuable représentant l'état complet de l'interface pour EcoBudget.
@@ -19,6 +20,7 @@ import com.example.model.YearMonth
  * @property isAddDialogOpen Indique si la boîte de dialogue d'enregistrement est visible.
  * @property editingTransaction Transaction en cours d'édition (ou null si mode création / fermé).
  */
+@Immutable
 data class EcoBudgetUiState(
     val currentMonth: YearMonth = YearMonth.current(),
     val filteredTransactions: List<Transaction> = emptyList(),

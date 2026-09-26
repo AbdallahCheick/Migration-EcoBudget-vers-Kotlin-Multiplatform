@@ -3,11 +3,11 @@ package com.example.data.repository
 import com.example.model.Category
 import com.example.model.Transaction
 import com.example.model.YearMonth
+import com.example.utils.generateUUID
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlin.uuid.Uuid
 
 /**
  * Implémentation factice (Mock/In-Memory) de [TransactionRepository] pour simuler l'accès
@@ -29,49 +29,49 @@ class FakeTransactionRepository : TransactionRepository {
         val initialList = listOf(
             // Mois actuel (0)
             Transaction(
-                id = Uuid.random().toString(),
+                id = generateUUID(),
                 title = "Supermarché Bio",
                 amount = 45000.0,
                 date = getTimeForMonth(0, 22, 14),
                 category = Category.ALIMENTATION
             ),
             Transaction(
-                id = Uuid.random().toString(),
+                id = generateUUID(),
                 title = "Session Tennis",
                 amount = 12000.0,
                 date = getTimeForMonth(0, 20, 10),
                 category = Category.LOISIRS
             ),
             Transaction(
-                id = Uuid.random().toString(),
+                id = generateUUID(),
                 title = "Ticket de Bus Express",
                 amount = 2500.0,
                 date = getTimeForMonth(0, 18, 8),
                 category = Category.TRANSPORT
             ),
             Transaction(
-                id = Uuid.random().toString(),
+                id = generateUUID(),
                 title = "Loyer Mensuel",
                 amount = 250000.0,
                 date = getTimeForMonth(0, 5, 9),
                 category = Category.LOGEMENT
             ),
             Transaction(
-                id = Uuid.random().toString(),
+                id = generateUUID(),
                 title = "Boulangerie & Pâtisserie",
                 amount = 4800.0,
                 date = getTimeForMonth(0, 15, 16),
                 category = Category.ALIMENTATION
             ),
             Transaction(
-                id = Uuid.random().toString(),
+                id = generateUUID(),
                 title = "Recharge Vélo Électrique",
                 amount = 3500.0,
                 date = getTimeForMonth(0, 12, 11),
                 category = Category.TRANSPORT
             ),
             Transaction(
-                id = Uuid.random().toString(),
+                id = generateUUID(),
                 title = "Facture Électricité",
                 amount = 48000.0,
                 date = getTimeForMonth(0, 8, 15),
@@ -80,28 +80,28 @@ class FakeTransactionRepository : TransactionRepository {
 
             // Mois précédent (-1)
             Transaction(
-                id = Uuid.random().toString(),
+                id = generateUUID(),
                 title = "Loyer Mois Précédent",
                 amount = 250000.0,
                 date = getTimeForMonth(-1, 5, 9),
                 category = Category.LOGEMENT
             ),
             Transaction(
-                id = Uuid.random().toString(),
+                id = generateUUID(),
                 title = "Courses du mois",
                 amount = 65000.0,
                 date = getTimeForMonth(-1, 10, 15),
                 category = Category.ALIMENTATION
             ),
             Transaction(
-                id = Uuid.random().toString(),
+                id = generateUUID(),
                 title = "Abonnement Transport",
                 amount = 35000.0,
                 date = getTimeForMonth(-1, 2, 8),
                 category = Category.TRANSPORT
             ),
             Transaction(
-                id = Uuid.random().toString(),
+                id = generateUUID(),
                 title = "Sortie Restaurant",
                 amount = 22000.0,
                 date = getTimeForMonth(-1, 20, 20),
@@ -110,14 +110,14 @@ class FakeTransactionRepository : TransactionRepository {
 
             // Mois suivant (+1)
             Transaction(
-                id = Uuid.random().toString(),
+                id = generateUUID(),
                 title = "Avance Loyer Prévue",
                 amount = 250000.0,
                 date = getTimeForMonth(1, 1, 9),
                 category = Category.LOGEMENT
             ),
             Transaction(
-                id = Uuid.random().toString(),
+                id = generateUUID(),
                 title = "Abonnement Salle de Sport",
                 amount = 20000.0,
                 date = getTimeForMonth(1, 3, 10),
