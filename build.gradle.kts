@@ -4,4 +4,10 @@ plugins {
   alias(libs.plugins.kotlin.android) apply false
   alias(libs.plugins.kotlin.compose) apply false
   alias(libs.plugins.google.devtools.ksp) apply false
+
+  // Kotlin Multiplatform : déclarés ici (apply false) pour être chargés une seule fois
+  // dans le classpath de build et partagés entre les modules :app et :shared.
+  alias(libs.plugins.android.library) apply false
+  alias(libs.plugins.kotlin.multiplatform) apply false
+  alias(libs.plugins.compose.multiplatform) apply false
 }
