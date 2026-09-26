@@ -35,15 +35,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.R
-import com.example.ui.labelResId
+import com.example.shared.resources.*
+import com.example.viewmodel.labelRes
 import com.example.model.Category
 import com.example.model.Transaction
 import com.example.ui.theme.DarkDialogBackground
@@ -107,9 +107,9 @@ fun AddTransactionDialog(
         title = {
             Text(
                 text = if (isEditMode) {
-                    stringResource(R.string.dialog_title_edit)
+                    stringResource(Res.string.dialog_title_edit)
                 } else {
-                    stringResource(R.string.dialog_title_new)
+                    stringResource(Res.string.dialog_title_new)
                 },
                 style = MaterialTheme.typography.headlineMedium.copy(
                     fontSize = 20.sp,
@@ -131,8 +131,8 @@ fun AddTransactionDialog(
                         title = it
                         if (isError) isError = false
                     },
-                    label = { Text(stringResource(R.string.label_transaction_title)) },
-                    placeholder = { Text(stringResource(R.string.placeholder_transaction_title), color = DarkTextSecondary) },
+                    label = { Text(stringResource(Res.string.label_transaction_title)) },
+                    placeholder = { Text(stringResource(Res.string.placeholder_transaction_title), color = DarkTextSecondary) },
                     singleLine = true,
                     isError = isError && title.isBlank(),
                     keyboardOptions = KeyboardOptions(
@@ -168,13 +168,13 @@ fun AddTransactionDialog(
                             if (isError) isError = false
                         }
                     },
-                    label = { Text(stringResource(R.string.label_transaction_amount)) },
-                    placeholder = { Text(stringResource(R.string.placeholder_transaction_amount), color = DarkTextSecondary) },
+                    label = { Text(stringResource(Res.string.label_transaction_amount)) },
+                    placeholder = { Text(stringResource(Res.string.placeholder_transaction_amount), color = DarkTextSecondary) },
                     singleLine = true,
                     isError = isError && amountText.isBlank(),
                     trailingIcon = {
                         Text(
-                            text = stringResource(R.string.currency_fcfa),
+                            text = stringResource(Res.string.currency_fcfa),
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
                             color = VioletPrimaryLight,
@@ -211,7 +211,7 @@ fun AddTransactionDialog(
                 // Sélecteur de catégorie
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = stringResource(R.string.label_category),
+                        text = stringResource(Res.string.label_category),
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold
@@ -225,7 +225,7 @@ fun AddTransactionDialog(
                     ) {
                         Category.entries.forEach { category ->
                             val isSelected = category == selectedCategory
-                            val label = stringResource(category.labelResId)
+                            val label = stringResource(category.labelRes)
 
                             Box(
                                 modifier = Modifier
@@ -289,9 +289,9 @@ fun AddTransactionDialog(
             ) {
                 Text(
                     text = if (isEditMode) {
-                        stringResource(R.string.btn_save)
+                        stringResource(Res.string.btn_save)
                     } else {
-                        stringResource(R.string.btn_add)
+                        stringResource(Res.string.btn_add)
                     },
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -304,7 +304,7 @@ fun AddTransactionDialog(
                 modifier = Modifier.testTag("button_cancel_add_transaction")
             ) {
                 Text(
-                    text = stringResource(R.string.btn_cancel),
+                    text = stringResource(Res.string.btn_cancel),
                     color = DarkTextSecondary,
                     fontWeight = FontWeight.Medium
                 )
