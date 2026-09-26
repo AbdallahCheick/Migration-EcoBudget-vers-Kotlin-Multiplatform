@@ -1,6 +1,6 @@
 [versions]
 agp = "8.10.1"
-kotlin = "2.0.21"
+kotlin = "2.1.21"
 coreKtx = "1.15.0"
 junit = "4.13.2"
 junitVersion = "1.3.0"
@@ -11,7 +11,7 @@ composeBom = "2024.10.01"
 
 lifecycleViewmodelCompose = "2.8.7"
 lifecycleRuntimeCompose = "2.8.7"
-googleDevtoolsKsp = "2.0.21-1.0.28"
+googleDevtoolsKsp = "2.1.21-2.0.1"
 navigationCompose = "2.8.9"
 roomRuntime = "2.7.0"
 roomKtx = "2.7.0"

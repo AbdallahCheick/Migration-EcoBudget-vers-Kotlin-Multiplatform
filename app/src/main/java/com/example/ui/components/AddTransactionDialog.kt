@@ -43,6 +43,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
+import com.example.ui.labelResId
 import com.example.model.Category
 import com.example.model.Transaction
 import com.example.ui.theme.DarkDialogBackground
