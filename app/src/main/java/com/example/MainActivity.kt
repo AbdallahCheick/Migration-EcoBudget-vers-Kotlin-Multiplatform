@@ -13,7 +13,8 @@ import com.example.ui.theme.MyApplicationTheme
 import com.example.viewmodel.EcoBudgetViewModel
 
 class MainActivity : ComponentActivity() {
-  private val viewModel: EcoBudgetViewModel by viewModels()
+  // ViewModel issu du module partagé, obtenu via sa fabrique multiplateforme.
+  private val viewModel: EcoBudgetViewModel by viewModels { EcoBudgetViewModel.Factory }
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
